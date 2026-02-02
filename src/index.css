@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  /* On définit les couleurs ici */
+  --color-primary: #1B456F;
+  --color-secondary: #506674;
+}
+
+/* On s'assure que le body prend toute la place sans marges parasites */
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden; /* Évite le scroll horizontal bizarre */
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+@layer utilities {
+  .animate-modal-enter {
+    animation: modalEnter 0.3s ease-out forwards;
+  }
+
+  @keyframes modalEnter {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}
+
+/* Ajoute ça en bas de ton index.css */
+#root {
+  display: block !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
