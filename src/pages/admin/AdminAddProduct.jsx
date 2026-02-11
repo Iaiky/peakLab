@@ -129,9 +129,6 @@ export default function AdminAddProduct() {
         </Link>
 
       <div className="flex items-center gap-4 mb-8">
-        {/* <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-full transition">
-          ←
-        </button> */}
         <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
           Nouveau <span className="text-primary">Produit</span>
         </h1>
@@ -143,8 +140,11 @@ export default function AdminAddProduct() {
       >
         {/* COLONNE GAUCHE : INFOS TEXTE */}
         <div className="md:col-span-2 space-y-6 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 space-y-2">
+          {/* On passe en 1 colonne par défaut (mobile) et 2 colonnes sur tablette/desktop (md:) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Nom du produit - Garde toute la largeur même sur desktop */}
+            <div className="md:col-span-2 space-y-2">
               <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">Nom du produit</label>
               <input 
                 required
@@ -155,28 +155,22 @@ export default function AdminAddProduct() {
               />
             </div>
             
+            {/* Catégorie */}
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">
-                Catégorie
-              </label>
+              <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">Catégorie</label>
               <select 
                 required
-                // On lie la valeur à l'état pour que React sache toujours ce qui est sélectionné
                 value={formData.Categorie} 
                 className="w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-primary font-medium"
                 onChange={(e) => setFormData({...formData, Categorie: e.target.value})}
               >
-                {/* Option vide pour forcer l'utilisateur à choisir s'il n'y a pas encore de sélection */}
-                {/* <option value="" disabled>Sélectionner une catégorie</option> */}
-                
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
 
+            {/* Prix */}
             <div className="space-y-2">
               <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">Prix (Ar)</label>
               <input 
@@ -187,6 +181,7 @@ export default function AdminAddProduct() {
               />
             </div>
 
+            {/* Poids */}
             <div className="space-y-2">
               <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">Poids (kg)</label>
               <input 
@@ -198,6 +193,7 @@ export default function AdminAddProduct() {
               />
             </div>
 
+            {/* Stock */}
             <div className="space-y-2">
               <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">Stock Initial</label>
               <input 
@@ -209,6 +205,7 @@ export default function AdminAddProduct() {
             </div>
           </div>
 
+          {/* Description */}
           <div className="space-y-2">
             <label className="text-xs font-black uppercase text-secondary tracking-widest px-1">Description</label>
             <textarea 

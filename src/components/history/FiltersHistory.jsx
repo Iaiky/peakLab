@@ -52,7 +52,7 @@ export default function FiltersHistory({
         <div className="flex flex-col sm:flex-row gap-3 w-full items-end">
           {/* Date début */}
           <div className="flex-1 w-full relative group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
               <span className="text-[10px] font-black text-primary uppercase tracking-tighter">
                 Du
               </span>
@@ -61,13 +61,15 @@ export default function FiltersHistory({
               type="date"
               value={startDate}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="w-full bg-white border-none rounded-2xl py-3.5 pl-12 pr-4 text-xs shadow-sm focus:ring-2 focus:ring-primary/20 text-slate-500 font-medium cursor-pointer transition-all"
+              // Ajout de min-h et correction de l'apparence iOS
+              className="w-full bg-white border-none rounded-2xl py-3.5 pl-12 pr-4 text-xs shadow-sm focus:ring-2 focus:ring-primary/20 text-slate-700 font-bold cursor-pointer transition-all min-h-[50px] appearance-none"
+              style={{ WebkitAppearance: 'none' }} 
             />
           </div>
 
           {/* Date fin */}
           <div className="flex-1 w-full relative group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
               <span className="text-[10px] font-black text-primary uppercase tracking-tighter">
                 Au
               </span>
@@ -76,7 +78,8 @@ export default function FiltersHistory({
               type="date"
               value={endDate}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="w-full bg-white border-none rounded-2xl py-3.5 pl-12 pr-4 text-xs shadow-sm focus:ring-2 focus:ring-primary/20 text-slate-500 font-medium cursor-pointer transition-all"
+              className="w-full bg-white border-none rounded-2xl py-3.5 pl-12 pr-4 text-xs shadow-sm focus:ring-2 focus:ring-primary/20 text-slate-700 font-bold cursor-pointer transition-all min-h-[50px] appearance-none"
+              style={{ WebkitAppearance: 'none' }}
             />
           </div>
 
