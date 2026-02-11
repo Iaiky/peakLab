@@ -9,11 +9,13 @@ export default function AdminInventory() {
 
   const { 
     data: products, 
+    setData,
     loading, 
     page, 
     hasNext, 
     setPage, 
     searchInput, 
+    activeSearch,
     setSearchInput, 
     updateFilters 
   } = useInventoryPagination(5);
@@ -33,17 +35,31 @@ export default function AdminInventory() {
 
   const handleConfirm = async (e) => {
     e.preventDefault();
+    
+    // 1. Déclarer la variable à l'extérieur pour qu'elle soit accessible partout dans la fonction
+    let updatedStockValue; 
+    const moveQty = Number(quantity);
+
     try {
       const productRef = doc(db, "produits", selectedProduct.id);
+
       await runTransaction(db, async (transaction) => {
         const productDoc = await transaction.get(productRef);
-        const currentStock = Number(productDoc.data().Stock) || 0;
-        const moveQty = Number(quantity);
-        
-        let newStock = movementType === 'IN' ? currentStock + moveQty : currentStock - moveQty;
-        if (movementType === 'OUT' && currentStock < moveQty) throw "Stock insuffisant !";
+        if (!productDoc.exists()) throw "Le produit n'existe plus !";
 
-        transaction.update(productRef, { Stock: newStock });
+        const currentStock = Number(productDoc.data().Stock) || 0;
+        
+        // 2. Calculer et assigner à la variable de portée supérieure
+        updatedStockValue = movementType === 'IN' 
+          ? currentStock + moveQty 
+          : currentStock - moveQty;
+        
+        if (movementType === 'OUT' && currentStock < moveQty) {
+          throw "Stock insuffisant !";
+        }
+
+        transaction.update(productRef, { Stock: updatedStockValue });
+
         const movementRef = doc(collection(db, "MouvementsStock"));
         transaction.set(movementRef, {
           Produit: selectedProduct.Nom,
@@ -55,9 +71,24 @@ export default function AdminInventory() {
           DateAjout: serverTimestamp()
         });
       });
+
+      // 3. Ici, updatedStockValue est bien définie car la transaction a réussi
+      setData(prevProducts => 
+        prevProducts.map(p => 
+          p.id === selectedProduct.id ? { ...p, Stock: updatedStockValue } : p
+        )
+      );
+
+      // Reset et fermeture
       setIsModalOpen(false);
-      // Optionnel: Recharger les données ou laisser le cache Firestore gérer
-    } catch (error) { alert(error); }
+      setQuantity(1);
+      setUnitPrice('');
+      setComment("");
+      
+    } catch (error) { 
+      console.error("Erreur transaction:", error);
+      alert(error); 
+    }
   };
 
   return (
@@ -74,40 +105,64 @@ export default function AdminInventory() {
         {/* ZONE ACTIONS : RECHERCHE + BOUTON */}
         <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-3">
           
-          {/* BARRE DE RECHERCHE*/}
+          {/* BARRE DE RECHERCHE AVEC BOUTONS D'ACTION */}
           <div className="relative group w-full">
             <form 
               onSubmit={(e) => { e.preventDefault(); updateFilters(searchInput); }} 
-              className="relative group w-full"
+              className="relative flex items-center gap-2 w-full"
             >
-              {/* L'icône Loupe avec effet de couleur au focus */}
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2.5"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+              <div className="relative flex-1 group">
+                {/* L'icône Loupe */}
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                  <svg
+                    className="w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+
+                {/* L'Input */}
+                <input
+                  type="text"
+                  placeholder="Rechercher un produit..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-full bg-white border-none rounded-2xl py-4 pl-11 pr-12 text-xs shadow-sm focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400 transition-all font-medium"
+                />
+
+                {/* Bouton RESET (X) - S'affiche seulement s'il y a du texte ou un filtre actif */}
+                {(searchInput !== "" || activeSearch !== "") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchInput("");
+                      updateFilters("");
+                    }}
+                    className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-red-500 transition-colors"
+                    title="Réinitialiser"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
-              {/* L'Input stylisé */}
-              <input
-                type="text"
-                placeholder="Rechercher un produit..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full bg-white border-none rounded-2xl py-4 pl-11 pr-4 text-xs shadow-sm focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400 transition-all font-medium"
-              />
-
-              {/* Bouton invisible pour valider le formulaire via "Entrée" */}
-              <button type="submit" className="hidden">Rechercher</button>
+              {/* Bouton VALIDER (Filtrer) */}
+              <button
+                type="submit"
+                className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg shadow-slate-200 active:scale-95"
+              >
+                Filtrer
+              </button>
             </form>
           </div>
 
@@ -212,6 +267,52 @@ export default function AdminInventory() {
             </tbody>
           </table>
         </div>
+
+        {/* --- ÉTAT VIDE (EMPTY STATE) --- */}
+        {!loading && products.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-24 px-4 text-center animate-in fade-in duration-500">
+            <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+              <svg 
+                className="w-10 h-10 text-slate-300" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="1.5" 
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" 
+                />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+              {activeSearch
+                ? "Aucun produit trouvé" 
+                : "Inventaire vide"}
+            </h3>
+
+            <p className="text-sm text-slate-500 max-w-[280px] mx-auto mt-2 leading-relaxed">
+              {activeSearch
+                ? `Aucun résultat pour ces critères. Essayez de modifier votre recherche ou la catégorie.` 
+                : "Il n'y a encore aucun produit enregistré dans votre inventaire."}
+            </p>
+
+            {/* Bouton de réinitialisation rapide */}
+            {(activeSearch) && (
+              <button 
+                onClick={() => {
+                  setSearchInput("");
+                  updateFilters("");
+                }}
+                className="mt-8 px-6 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-primary transition-colors shadow-lg shadow-slate-200"
+              >
+                Réinitialiser les filtres
+              </button>
+            )}
+          </div>
+        )}
 
         {/* BARRE DE PAGINATION (Adaptée) */}
           {/* PAGINATION */}

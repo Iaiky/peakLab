@@ -334,6 +334,53 @@ export default function AdminProducts() {
               </table>
             </div>
 
+            {/* --- ÉTAT VIDE (EMPTY STATE) --- */}
+            {!loading && products.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-24 px-4 text-center animate-in fade-in duration-500">
+                <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+                  <svg 
+                    className="w-10 h-10 text-slate-300" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth="1.5" 
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" 
+                    />
+                  </svg>
+                </div>
+
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+                  {activeSearch || (activeCategory !== "Toutes les catégories")
+                    ? "Aucun produit trouvé" 
+                    : "Inventaire vide"}
+                </h3>
+
+                <p className="text-sm text-slate-500 max-w-[280px] mx-auto mt-2 leading-relaxed">
+                  {activeSearch || (activeCategory !== "Toutes les catégories")
+                    ? `Aucun résultat pour ces critères. Essayez de modifier votre recherche ou la catégorie.` 
+                    : "Il n'y a encore aucun produit enregistré dans votre inventaire."}
+                </p>
+
+                {/* Bouton de réinitialisation rapide */}
+                {(activeSearch || activeCategory !== "Toutes les catégories") && (
+                  <button 
+                    onClick={() => {
+                      setSearchInput("");
+                      setTempCategory("Toutes les catégories");
+                      updateFilters("", "Toutes les catégories");
+                    }}
+                    className="mt-8 px-6 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-primary transition-colors shadow-lg shadow-slate-200"
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* PAGINATION SIMPLIFIÉE */}
             <PaginationHistory 
               page={page}

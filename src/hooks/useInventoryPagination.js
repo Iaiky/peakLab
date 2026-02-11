@@ -73,7 +73,16 @@ export function useInventoryPagination(pageSize = 5) {
     };
 
   return {
-    data, loading, page, hasNext, setPage,
-    searchInput, setSearchInput, updateFilters
+    data, 
+    setData,       
+    refresh: loadData,
+    loading, 
+    page, 
+    hasNext, 
+    setPage,
+    searchInput, 
+    activeSearch,
+    setSearchInput, 
+    updateFilters
   };
 }
