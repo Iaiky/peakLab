@@ -81,15 +81,17 @@ export default function AdminAddProduct() {
   // 4. L'ENVOI À FIREBASE
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile) return alert("Veuillez ajouter une image !");
     if (!formData.IdGroupe || !formData.IdCategorie) return alert("Choisissez une marque et une catégorie !");
     
     setLoading(true);
     try {
-      // 1. Upload Image
-      const storageRef = ref(storage, `produits/${Date.now()}_${imageFile.name}`);
-      await uploadBytes(storageRef, imageFile);
-      const url = await getDownloadURL(storageRef);
+      let url = "https://firebasestorage.googleapis.com/v0/b/store-muscu.firebasestorage.app/o/produits%2Fno-image.png?alt=media&token=d10c5320-4948-4739-a4c3-e4c1faebd7bc";
+      // 3. Upload uniquement SI un fichier a été sélectionné
+      if (imageFile) {
+        const storageRef = ref(storage, `produits/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        url = await getDownloadURL(storageRef);
+      }
 
       // 2. Préparation données
       const stockInitial = Number(formData.Stock) || 0;
