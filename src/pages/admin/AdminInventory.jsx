@@ -5,6 +5,7 @@ import { doc, collection, runTransaction, serverTimestamp, getDocs } from 'fireb
 import { useInventoryPagination } from '../../hooks/useInventoryPagination';
 import  PaginationHistory  from '../../components/history/PaginationsHistory'
 import { useCategories } from '../../hooks/useCategorie';
+import GroupTabs from '../../components/GroupTabs';
 
 export default function AdminInventory() {
 
@@ -25,7 +26,7 @@ export default function AdminInventory() {
     activeSearch,
     setSearchInput, 
     updateFilters 
-  } = useInventoryPagination(5);
+  } = useInventoryPagination(10);
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -219,22 +220,11 @@ export default function AdminInventory() {
         </div>
       </div>
 
-      {/* TABS DES GROUPES (MARQUES) */}
-      <div className="flex overflow-x-auto gap-2 mb-6 no-scrollbar pb-2">
-        {groups.map((group) => (
-          <button
-            key={group.id}
-            onClick={() => setSearchParams({ group: group.id })}
-            className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-              currentGroupId === group.id
-                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-                : "bg-white text-slate-400 border border-slate-100 hover:bg-slate-50"
-            }`}
-          >
-            {group.Nom}
-          </button>
-        ))}
-      </div>
+      <GroupTabs 
+        groups={groups} 
+        currentGroupId={currentGroupId} 
+        onGroupChange={(id) => setSearchParams({ group: id, page: 1 })} 
+      />
 
       {/* TABLEAU AVEC SCROLL HORIZONTAL MOBILE */}
       <div className="bg-transparent md:bg-white md:rounded-[2.5rem] md:shadow-sm md:border md:border-slate-100 overflow-hidden">
@@ -246,15 +236,33 @@ export default function AdminInventory() {
               
               {/* Ligne 1 : Référence / Produit */}
               <div className="flex justify-between items-start">
-                <div className="min-w-0">
+                {/* min-w-0 est essentiel pour que line-clamp fonctionne, pr-4 pour l'espace avec le stock */}
+                <div className="min-w-0 flex-1 pr-4">
                   <p className="text-[10px] text-secondary font-black uppercase tracking-widest mb-1">Référence</p>
-                  <p className="font-black text-slate-900 text-base truncate">{product.Nom}</p>
-                  <p className="text-[10px] text-primary font-bold uppercase">{getCatName(product.IdCategorie)}</p>
+                  
+                  {/* Nom du produit : Autorise 2 lignes avant les "..." */}
+                  <p className="font-black text-slate-900 text-base leading-tight line-clamp-2 mb-2">
+                    {product.Nom}
+                  </p>
+                  
+                  {/* Bloc Catégorie + Poids en dessous */}
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-[10px] text-primary font-bold uppercase tracking-wide">
+                      {getCatName(product.IdCategorie)}
+                    </p>
+                    {Number(product.Poids) > 0 && (
+                      <p className="text-[10px] text-slate-400 font-bold italic">
+                        {product.Poids}g
+                      </p>
+                    )}
+                  </div>
                 </div>
                 
-                {/* Ligne 2 : Stock (Intégré en haut à droite) */}
-                <div className="text-right whitespace-nowrap">
-                  <p className="text-[10px] text-secondary font-black uppercase tracking-widest mb-1">Stock</p>
+                {/* Ligne 2 : Stock (Reste en haut à droite) */}
+                <div className="flex flex-col items-center shrink-0 min-w-[60px] ml-2">
+                  <p className="text-[10px] text-secondary font-black uppercase tracking-widest mb-1">
+                    Stock
+                  </p>
                   <span className={`inline-block px-3 py-1 rounded-lg text-[11px] font-black ${
                     Number(product.Stock) < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                   }`}>
@@ -282,13 +290,13 @@ export default function AdminInventory() {
           ))}
         </div>
 
-        {/* --- VUE DESKTOP : TABLEAU (Inchangé) --- */}
+        {/* --- VUE DESKTOP : TABLEAU --- */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr className="text-[11px] uppercase tracking-widest text-secondary font-black">
                 <th className="px-8 py-5">Référence</th>
-                <th className="px-6 py-5">Catégorie</th>
+                <th className="px-6 py-5">Poids</th>
                 <th className="px-6 py-5">Stock</th>
                 <th className="px-8 py-5 text-right">Actions</th>
               </tr>
@@ -299,6 +307,15 @@ export default function AdminInventory() {
                   <td className="px-8 py-5">
                     <p className="font-bold text-slate-900 text-sm">{product.Nom}</p>
                     <p className="text-[10px] text-secondary font-medium uppercase">{getCatName(product.IdCategorie)}</p>
+                  </td>
+                  <td className="px-6 py-5">
+                    {Number(product.Poids) > 0 ? (
+                      <span className="text-sm font-bold text-slate-600">
+                        {product.Poids}<span className="text-[10px] text-slate-400">g</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 text-xs">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-5">
                     <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
@@ -451,19 +468,19 @@ export default function AdminInventory() {
 
               <div className="grid grid-cols-2 gap-3 md:gap-4 pt-2">
                 <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  className="bg-slate-100 text-secondary py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm hover:bg-slate-200 transition"
-                >
-                  Annuler
-                </button>
-                <button 
                   type="submit"
                   className={`py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm text-white shadow-lg transition transform active:scale-95 ${
                     movementType === 'IN' ? 'bg-green-500 shadow-green-200' : 'bg-slate-900 shadow-slate-200'
                   }`}
                 >
                   Confirmer
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="bg-slate-100 text-secondary py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm hover:bg-slate-200 transition"
+                >
+                  Annuler
                 </button>
               </div>
             </form>

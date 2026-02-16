@@ -34,8 +34,8 @@ const ProductDetailModal = ({ isOpen, product, onClose, onEdit }) => {
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight mb-1 break-words">
                 {product.Nom}
               </h2>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-tighter">
-                {product.Poids} KG / UNITÉ
+              <p className="text-xs text-slate-500 font-bold tracking-tighter">
+                {product.Poids}g / UNITÉ
               </p>
             </div>
             <div className="text-left md:text-right">

@@ -8,6 +8,7 @@ import AdminProductDetailModal from '../../components/admin/AdminProductDetailMo
 import PaginationHistory from '../../components/history/PaginationsHistory';
 import { useGroups } from '../../hooks/useGroup';
 import { useCategories } from '../../hooks/useCategorie';
+import GroupTabs from '../../components/GroupTabs';
 
 export default function AdminProducts() {
 
@@ -28,7 +29,7 @@ export default function AdminProducts() {
     activeSearch,
     setAllProducts,
     activeGroup,
-  } = useAdminProduct(5);
+  } = useAdminProduct(10);
 
   // État local pour les onglets
   const [currentGroupId, setCurrentGroupId] = useState(activeGroup || "");
@@ -216,22 +217,11 @@ export default function AdminProducts() {
         </Link>
       </div>
 
-      {/* NAVIGATION PAR GROUPES (TABS) */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-        {groups.map((group) => (
-          <button
-            key={group.id}
-            onClick={() => handleGroupChange(group.id)}
-            className={`px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all whitespace-nowrap ${
-              currentGroupId === group.id 
-              ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' 
-              : 'bg-white text-slate-400 border border-slate-100 hover:bg-slate-50'
-            }`}
-          >
-            {group.Nom}
-          </button>
-        ))}
-      </div>
+      <GroupTabs 
+        groups={groups} 
+        currentGroupId={currentGroupId} 
+        onGroupChange={handleGroupChange} 
+      />
 
       {/* BARRE DE RECHERCHE ET FILTRES - Stacked sur mobile */}
       <div className="bg-white p-3 md:p-4 rounded-2xl mb-6 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 md:gap-4 items-center">
@@ -295,61 +285,69 @@ export default function AdminProducts() {
           <>
             {/* --- VUE MOBILE : CARDS (Visible uniquement sur mobile < 768px) --- */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
-              {products.map((product) => (
-                <div key={product.id} 
-                className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 relative"
+            {products.map((product) => (
+              <div key={product.id} 
+                className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col relative"
                 onClick={() => setSelectedProduct(product)}
-                >
-                  {/* Header : Image + Nom + Poids */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-slate-100 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden">
-                      {product.image ? <img src={product.image} alt="" className="w-full h-full object-cover"/> : <span className="text-[8px] font-bold text-slate-400">NO IMG</span>}
+              >
+                {/* Contenu principal (Image + Infos) */}
+                <div className="p-5">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-50">
+                      {product.image ? (
+                        <img src={product.image} alt="" className="w-full h-full object-cover"/>
+                      ) : (
+                        <span className="text-[8px] font-bold text-slate-300 uppercase">No Img</span>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 rounded-md text-slate-600 uppercase mb-1 inline-block">
+
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] font-black px-2 py-0.5 bg-slate-100 rounded-md text-slate-500 uppercase mb-1 inline-block">
                         {getCategoryName(product.IdCategorie)}
                       </span>
-                      <p className="font-bold text-slate-900 text-base truncate">{product.Nom}</p>
-                      <p className="text-[11px] text-secondary font-medium uppercase">{product.Poids} kg</p>
+                      <p className="font-black text-slate-900 text-base leading-tight line-clamp-2">
+                        {product.Nom}
+                      </p>
+                      {Number(product.Poids) > 0 && (
+                        <p className="text-[11px] text-slate-400 font-bold italic mt-1">{product.Poids}g</p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Détails : Prix et Stock */}
-                  <div className="flex justify-between items-end border-t border-slate-50 pt-4">
+                  {/* Pied de la section info : Prix et Stock */}
+                  <div className="flex justify-between items-center mt-2">
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Prix</p>
-                      <p className="font-black text-slate-900 text-lg">{product.Prix.toLocaleString()}Ar</p>
+                      <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Prix</p>
+                      <p className="font-black text-slate-900 text-lg">{product.Prix?.toLocaleString()} Ar</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Stock</p>
-                      <div className="flex items-center gap-2 justify-end">
-                        <div className={`w-2 h-2 rounded-full ${product.Stock > 10 ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-                        <span className="font-bold text-sm text-slate-700">{product.Stock} unités</span>
-                      </div>
+                    
+                    {/* Section Actions (Juste les icônes, alignées à droite du prix) */}
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        onClick={() => setEditingProduct(product)}
+                        className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-sm border border-blue-100 active:scale-90 transition-transform"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(product.id, product.Nom, product.IdCategorie)}
+                        className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shadow-sm border border-red-100 active:scale-90 transition-transform"
+                      >
+                        🗑️
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Actions flottantes */}
-                  <div 
-                    className="absolute top-4 right-4 flex gap-1" 
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button 
-                      onClick={() => setEditingProduct(product)}
-                      className="p-2 bg-blue-50 text-blue-600 rounded-lg shadow-sm"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(product.id, product.Nom, product.IdCategorie)}
-                      className="p-2 bg-red-50 text-red-500 rounded-lg shadow-sm"
-                    >
-                      🗑️
-                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Petit indicateur de stock en badge flottant ou en bas */}
+                <div className="px-5 pb-4 flex justify-end">
+                  <span className={`text-[10px] font-black px-3 py-1 rounded-full ${Number(product.Stock) > 10 ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {product.Stock || 0} en stock
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
 
             {/* --- VUE DESKTOP : TABLEAU (Caché sur mobile) --- */}
             <div className="hidden md:block overflow-x-auto">
@@ -379,7 +377,11 @@ export default function AdminProducts() {
                             </div>
                             <div className="min-w-0">
                               <p className="font-bold text-slate-900 text-sm truncate group-hover:text-primary transition-colors">{product.Nom}</p>
-                              <p className="text-[10px] text-secondary font-medium uppercase tracking-tighter">{product.Poids} kg</p>
+                              {Number(product.Poids) > 0 && (
+                                <p className="text-[10px] text-secondary font-medium tracking-tighter">
+                                  {product.Poids}g
+                                </p>
+                              )}
                             </div>
                         </div>
                       </td>
@@ -535,7 +537,7 @@ export default function AdminProducts() {
                   />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-[10px] font-bold uppercase text-slate-400">Poids (Kg)</label>
+                  <label className="text-[10px] font-bold uppercase text-slate-400">Poids (g)</label>
                   <input 
                     type="number"
                     className="w-full bg-slate-50 border-none rounded-xl p-3 mt-1"
