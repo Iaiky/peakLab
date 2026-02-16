@@ -1,5 +1,5 @@
 
-const ProductDetailModal = ({ isOpen, product, onClose, onEdit }) => {
+const ProductDetailModal = ({ isOpen, product, categoryName, onClose, onEdit }) => {
   if (!isOpen || !product) return null;
 
   return (
@@ -22,7 +22,7 @@ const ProductDetailModal = ({ isOpen, product, onClose, onEdit }) => {
           </button>
           <div className="absolute bottom-4 left-4">
             <span className="px-3 py-1 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
-              {product.Categorie || "Général"}
+              {categoryName || "Général"}
             </span>
           </div>
         </div>
@@ -34,9 +34,11 @@ const ProductDetailModal = ({ isOpen, product, onClose, onEdit }) => {
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight mb-1 break-words">
                 {product.Nom}
               </h2>
-              <p className="text-xs text-slate-500 font-bold tracking-tighter">
-                {product.Poids}g / UNITÉ
-              </p>
+              {Number(product.Poids) > 0 && (
+                <p className="text-xs text-slate-500 font-bold tracking-tighter uppercase">
+                  {product.Poids}g / UNITÉ
+                </p>
+              )}
             </div>
             <div className="text-left md:text-right">
               <p className="text-[10px] font-bold text-slate-400 uppercase">Prix unitaire</p>

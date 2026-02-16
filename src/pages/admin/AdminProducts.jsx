@@ -588,6 +588,7 @@ export default function AdminProducts() {
       <AdminProductDetailModal 
         isOpen={!!selectedProduct} 
         product={selectedProduct} 
+        categoryName={selectedProduct ? getCategoryName(selectedProduct.IdCategorie) : ""}
         onClose={() => setSelectedProduct(null)} 
         onEdit={(prod) => {
           setSelectedProduct(null);
