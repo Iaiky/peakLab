@@ -15,17 +15,29 @@ const StockMovementModal = ({
 }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   if (!isOpen) return null;
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isSuccess) return;
 
     setIsSubmitting(true);
 
     try {
       await onConfirm();
+
+      // SI RÉUSSITE :
+      setIsSuccess(true);
+      setIsSubmitting(false);
+
+      // On attend 1.5s pour que l'utilisateur voie le succès, puis on ferme
+      setTimeout(() => {
+        setIsSuccess(false);
+        onClose();
+      }, 1500);
+
     }catch(error) {
       console.error(error);
       setIsSubmitting(false);
@@ -39,7 +51,7 @@ const StockMovementModal = ({
       {/* Overlay */}
       <div 
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
-        onClick={onClose}
+        onClick={!isSubmitting && !isSuccess ? onClose : undefined}
       ></div>
       
       {/* Modal Content */}
@@ -118,35 +130,43 @@ const StockMovementModal = ({
             ></textarea>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:gap-4 pt-2">
+          <div className={`grid ${isSuccess ? 'grid-cols-1' : 'grid-cols-2'} gap-3 md:gap-4 pt-2`}>
             <button 
               type="submit"
-              disabled={isSubmitting}
-              className={`py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm text-white shadow-lg transition transform active:scale-95 flex items-center justify-center ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-              } ${
-                movementType === 'IN' ? 'bg-green-500 shadow-green-200' : 'bg-slate-900 shadow-slate-200'
+              disabled={isSubmitting || isSuccess}
+              className={`py-4 rounded-2xl font-bold text-sm text-white shadow-lg transition-all duration-500 transform active:scale-95 flex items-center justify-center ${
+                isSuccess 
+                  ? 'bg-green-500 shadow-green-200 w-full' 
+                  : isSubmitting 
+                    ? 'opacity-70 cursor-not-allowed bg-slate-400' 
+                    : movementType === 'IN' ? 'bg-green-500 shadow-green-200' : 'bg-slate-900 shadow-slate-200'
               }`}
             >
               {/* 4. Feedback visuel pendant le chargement */}
-                {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    En cours...
-                  </div>
-                ) : 'Confirmer'}
+              {isSuccess ? (
+              <div className="flex items-center gap-2 animate-in zoom-in duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Mise à jour réussie !</span>
+              </div>
+            ) : isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Traitement...</span>
+              </div>
+            ) : 'Confirmer'}
             </button>
-            <button 
-              type="button" 
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="bg-slate-100 text-secondary py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm hover:bg-slate-200 transition disabled:opacity-50"
-            >
-              Annuler
-            </button>
+            {!isSuccess && (
+              <button 
+                type="button" 
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="bg-slate-100 text-secondary py-4 rounded-2xl font-bold text-sm hover:bg-slate-200 transition disabled:opacity-50"
+              >
+                Annuler
+              </button>
+            )}
           </div>
         </form>
       </div>

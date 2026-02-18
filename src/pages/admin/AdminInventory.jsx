@@ -75,64 +75,79 @@ export default function AdminInventory() {
     setIsModalOpen(true);
   };
 
-  const handleConfirm = async (e) => {
-    // e.preventDefault();
-    
-    // 1. Déclarer la variable à l'extérieur pour qu'elle soit accessible partout dans la fonction
-    let updatedStockValue; 
+  const handleConfirm = async () => {
+    // On récupère les valeurs numériques proprement au début
     const moveQty = Number(quantity);
+    const pPrice = Number(unitPrice);
+    let updatedStockValue;
 
     try {
       const productRef = doc(db, "produits", selectedProduct.id);
 
+      // DÉBUT DE LA TRANSACTION : Tout ce qui est à l'intérieur est "atomique"
       await runTransaction(db, async (transaction) => {
+        // 1. Lecture en temps réel du stock sur le serveur
         const productDoc = await transaction.get(productRef);
-        if (!productDoc.exists()) throw "Le produit n'existe plus !";
+        if (!productDoc.exists()) throw "Le produit n'existe plus dans la base !";
 
         const productData = productDoc.data();
-        const currentStock = Number(productDoc.data().Stock) || 0;
-        
-        // 2. Calculer et assigner à la variable de portée supérieure
+        const currentStock = Number(productData.Stock) || 0;
+
+        // 2. Calcul du nouveau stock
         updatedStockValue = movementType === 'IN' 
           ? currentStock + moveQty 
           : currentStock - moveQty;
-        
+
+        // 3. Vérification de sécurité pour les sorties
         if (movementType === 'OUT' && currentStock < moveQty) {
-          throw "Stock insuffisant !";
+          throw `Stock insuffisant ! (Disponible: ${currentStock}, Demandé: ${moveQty})`;
         }
 
-        transaction.update(productRef, { Stock: updatedStockValue });
+        // 4. MISE À JOUR DU PRODUIT
+        transaction.update(productRef, { 
+          Stock: updatedStockValue,
+          DerniereMiseAJour: serverTimestamp() 
+        });
 
+        // 5. CRÉATION DU MOUVEMENT D'HISTORIQUE
         const movementRef = doc(collection(db, "MouvementsStock"));
         transaction.set(movementRef, {
-          Produit: selectedProduct.Nom,
+          Produit: selectedProduct.Nom || selectedProduct.name || "Produit sans nom",
           ProductId: selectedProduct.id,
-          IdGroupe: productData.IdGroupe,       // On prend l'ID groupe du produit
-          IdCategorie: productData.IdCategorie,
+          IdGroupe: productData.IdGroupe || "N/A",
+          IdCategorie: productData.IdCategorie || "N/A",
           Quantite: moveQty,
-          PrixUnitaire: Number(unitPrice),
-          Motif: comment,
+          PrixUnitaire: pPrice,
+          ValeurTotale: moveQty * pPrice, // Calculer le total ici facilite les futurs rapports
+          Motif: comment || "Aucun commentaire",
           TypeMouvement: movementType === 'IN' ? "Entrée" : "Sortie",
-          DateAjout: serverTimestamp()
+          DateAjout: serverTimestamp(),
+          StockAvant: currentStock,
+          StockApres: updatedStockValue
         });
       });
 
-      // 3. Ici, updatedStockValue est bien définie car la transaction a réussi
+      // --- SI ON ARRIVE ICI, LA TRANSACTION EST RÉUSSIE ---
+
+      // 6. Mise à jour de l'UI locale (State React)
       setData(prevProducts => 
         prevProducts.map(p => 
           p.id === selectedProduct.id ? { ...p, Stock: updatedStockValue } : p
         )
       );
 
-      // Reset et fermeture
-      setIsModalOpen(false);
+      // 7. Reset et Fermeture (le modal gère déjà son isSubmitting)
+      // setIsModalOpen(false);
       setQuantity(1);
       setUnitPrice('');
       setComment("");
-      
-    } catch (error) { 
-      console.error("Erreur transaction:", error);
-      alert(error); 
+
+    } catch (error) {
+      // Si la transaction échoue, rien n'a été modifié en base
+      console.error("Erreur critique transaction:", error);
+      alert(typeof error === 'string' ? error : "Une erreur réseau est survenue. Veuillez réessayer.");
+      // On ne ferme pas le modal ici pour permettre à l'utilisateur de corriger (ex: réduire la quantité)
+      throw error; // On propage l'erreur pour que le modal arrête son état "isSubmitting"
     }
   };
 
