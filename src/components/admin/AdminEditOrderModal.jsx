@@ -1,106 +1,89 @@
 import { useState } from 'react';
-import allProducts from "../../assets/products";
 
-export default function AdminEditOrderModal({ order, isOpen, onClose, onSave }) {
-  const [items, setItems] = useState([...order.items]);
+export default function AdminEditOrderModal({ order, onClose, onSave }) {
+  // On initialise avec les items existants
+  const [editedItems, setEditedItems] = useState([...(order.items || order.panier || [])]);
 
-  if (!isOpen) return null;
-
+  // --- LOGIQUE ACTIONS ---
+  
   const updateQty = (id, delta) => {
-    setItems(items.map(item => 
+    setEditedItems(prev => prev.map(item => 
       item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
     ));
   };
 
   const removeItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
+    setEditedItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const addNewProduct = (e) => {
-    const prodId = parseInt(e.target.value);
-    const product = allProducts.find(p => p.id === prodId);
-    
-    if (product && !items.find(i => i.id === prodId)) {
-      setItems([...items, { id: product.id, name: product.name, qty: 1, price: product.price }]);
-    }
-    e.target.value = "";
-  };
-
-  const total = items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+  const total = editedItems.reduce((acc, item) => acc + (item.prixUnitaire * item.qty), 0);
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-6">
-      {/* Overlay - click to close */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
-      
-      {/* Modal Container: Fullscreen on mobile, rounded on desktop */}
-      <div className="relative bg-white w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 md:p-4">
+      {/* Overlay de clic pour fermer si on clique à côté (optionnel) */}
+      <div className="absolute inset-0" onClick={onClose}></div>
+
+      <div className="relative bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] md:max-h-[85vh] animate-in slide-in-from-bottom duration-300">
         
-        {/* Header - Fixed height */}
-        <div className="p-5 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <div>
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter">Édition</h2>
-            <p className="text-secondary text-[10px] font-bold uppercase tracking-widest leading-tight">{order.id} — {order.customer}</p>
+        {/* PETITE BARRE DE DRAG (Mobile uniquement) */}
+        <div className="md:hidden w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-4 mb-1 shrink-0" />
+
+        {/* HEADER */}
+        <div className="px-6 md:px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
+          <div className="text-left">
+            <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">Ajuster la commande</h2>
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">ID: #{order.id.slice(-6)}</p>
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">✕</button>
+          <button onClick={onClose} className="p-2 bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
 
-        {/* Scrollable List */}
-        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-4 bg-white">
-          <label className="text-[10px] font-black uppercase text-secondary tracking-widest px-1 block mb-2">Articles commandés</label>
+        {/* LISTE DES ARTICLES - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-3">
+          <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 block px-1 text-left">Articles commandés</label>
           
-          {items.map((item) => (
-            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 gap-4">
-              <div className="flex-1">
-                <p className="font-bold text-slate-900 text-sm md:text-base">{item.name}</p>
-                <p className="text-[10px] md:text-xs text-primary font-black uppercase tracking-wider">{item.price} Ar / unité</p>
-              </div>
-
-              <div className="flex items-center justify-between sm:justify-end gap-4 md:gap-6 border-t sm:border-t-0 pt-3 sm:pt-0">
-                <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                  <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center font-bold text-slate-400 hover:text-primary transition-colors">-</button>
-                  <span className="font-black text-sm w-4 text-center">{item.qty}</span>
-                  <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center font-bold text-slate-400 hover:text-primary transition-colors">+</button>
+          {editedItems.length > 0 ? editedItems.map((item) => (
+            <div key={item.id} className="flex flex-col bg-slate-50/50 rounded-2xl p-4 border border-slate-50">
+              <div className="flex justify-between items-start text-left">
+                <div className="flex flex-col min-w-0 pr-4">
+                  {item.category && <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">{item.category}</span>}
+                  <span className="text-sm font-bold text-slate-700 leading-tight">{item.nom}</span>
                 </div>
-                <div className="min-w-[80px] text-right font-black text-slate-900 text-sm">
-                  {item.price * item.qty} Ar
-                </div>
-                <button onClick={() => removeItem(item.id)} className="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-lg transition-colors">
-                  🗑️
+                <button onClick={() => removeItem(item.id)} className="shrink-0 text-slate-300 hover:text-red-500 p-1">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
-            </div>
-          ))}
 
-          <div className="pt-2">
-            <select 
-              onChange={addNewProduct}
-              className="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-xs md:text-sm font-bold text-secondary focus:border-primary focus:ring-0 transition-colors cursor-pointer appearance-none"
-            >
-              <option value="">+ Ajouter un produit...</option>
-              {allProducts.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.price} Ar)</option>
-              ))}
-            </select>
-          </div>
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center gap-4 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+                  <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-slate-50 rounded-lg text-slate-600 font-black">-</button>
+                  <span className="text-sm font-black text-slate-900 min-w-[20px] text-center tabular-nums">{item.qty}</span>
+                  <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-slate-50 rounded-lg text-slate-600 font-black">+</button>
+                </div>
+                <div className="text-right">
+                    <span className="text-[9px] font-bold text-slate-300 block leading-none mb-1">{(item.prixUnitaire).toLocaleString()} Ar</span>
+                    <span className="text-sm font-black text-slate-900 italic">{(item.prixUnitaire * item.qty).toLocaleString()} Ar</span>
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="py-10 text-center text-slate-400 font-bold text-xs uppercase italic tracking-widest">La commande est vide</div>
+          )}
         </div>
 
-        {/* Footer - Always visible, fixed height */}
-        <div className="p-5 md:p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-center sm:text-left w-full sm:w-auto">
-            <p className="text-[9px] font-black text-secondary uppercase tracking-widest">Nouveau Total</p>
-            <p className="text-2xl md:text-3xl font-black text-primary leading-none">{total.toLocaleString()} Ar</p>
+        {/* FOOTER - Fixe en bas */}
+        <div className="p-6 md:p-8 border-t border-slate-100 bg-slate-50/80 backdrop-blur-md shrink-0 pb-10 md:pb-8">
+          <div className="flex justify-between items-center mb-5">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total ajusté</span>
+            <span className="text-xl md:text-2xl font-black text-slate-900 tabular-nums">{total.toLocaleString()} Ar</span>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-4 text-[10px] font-black uppercase text-slate-400">Annuler</button>
             <button 
-              onClick={onClose} 
-              className="flex-1 sm:flex-none px-6 py-4 rounded-xl md:rounded-2xl font-bold text-secondary text-xs uppercase tracking-widest hover:bg-slate-200 transition"
-            >
-              Annuler
-            </button>
-            <button 
-              onClick={() => onSave(order.id, items, total)}
-              className="flex-[2] sm:flex-none px-6 md:px-10 py-4 rounded-xl md:rounded-2xl font-bold text-white text-xs uppercase tracking-widest bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              disabled={editedItems.length === 0}
+              onClick={() => onSave(order.id, editedItems)}
+              className="flex-[3] bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 disabled:opacity-30"
             >
               Enregistrer
             </button>

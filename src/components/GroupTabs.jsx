@@ -2,7 +2,7 @@ import React from 'react';
 
 const GroupTabs = ({ groups, currentGroupId, onGroupChange }) => {
   return (
-    <div className="bg-slate-100/50 p-1.5 rounded-[2rem] flex overflow-x-auto gap-1 mb-8 no-scrollbar">
+    <div className="bg-slate-100/50 p-1.5 rounded-[2rem] flex justify-center items-center gap-1 mb-8 w-max mx-auto overflow-x-auto no-scrollbar max-w-full">
       {groups.map((group) => {
         const isActive = currentGroupId === group.id;
         return (
@@ -11,7 +11,7 @@ const GroupTabs = ({ groups, currentGroupId, onGroupChange }) => {
             onClick={() => onGroupChange(group.id)}
             className={`relative px-8 py-3.5 rounded-[1.6rem] text-[11px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${
               isActive
-                ? "bg-white text-slate-900 shadow-sm"
+                ? "bg-white text-slate-900 shadow-sm scale-105" // Petit effet d'échelle sur l'actif
                 : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
             }`}
           >

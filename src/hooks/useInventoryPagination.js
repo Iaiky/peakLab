@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore";
 import { db } from "../firebase/config";
 
-export function useInventoryPagination(pageSize = 5) {
+export function useInventoryPagination(pageSize ) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);

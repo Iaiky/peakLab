@@ -43,13 +43,23 @@ export default function Navbar() {
           {/* AUTHENTIFICATION */}
           {user ? (
             <div className="flex items-center gap-3 pl-2 border-l border-slate-100">
-              <Link to="/profile" className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-primary/20">
-                  {getInitials()}
+              <Link to="/profile" className="flex items-center gap-3 group">
+                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-primary/20 overflow-hidden border-2 border-transparent group-hover:border-primary/20 transition-all">
+                  {/* Logique Image vs Initiales */}
+                  {user?.photoURL || user?.avatar ? (
+                    <img 
+                      src={user?.photoURL || user?.avatar} 
+                      alt="Profil" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>{getInitials()}</span>
+                  )}
                 </div>
-                <div className="hidden md:block text-right">
-                  <p className="text-xs font-bold text-slate-900 leading-none">
-                    {user.displayName || user.name || "Mon Profil"}
+                
+                <div className="hidden md:block text-left">
+                  <p className="text-xs font-bold text-slate-900 leading-none truncate max-w-[100px]">
+                    {user?.displayName || "Mon Profil"}
                   </p>
                 </div>
               </Link>

@@ -22,7 +22,7 @@ export default function AdminInventoryHistory() {
     startDate, setStartDate,
     endDate, setEndDate,
     handleSearch, 
-    handleReset: originalReset,
+    handleReset,
     activeSearch, 
     activeStart, 
     activeEnd,
@@ -37,7 +37,7 @@ export default function AdminInventoryHistory() {
   const customReset = () => {
     setSelectedGroup("");
     setSelectedCat("");
-    originalReset();
+    handleReset();
   };
 
   const handlePrev = () => setPage(prev => Math.max(1, prev - 1));

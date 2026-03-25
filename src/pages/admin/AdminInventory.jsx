@@ -186,7 +186,7 @@ export default function AdminInventory() {
           <div className="relative group w-full">
             <form 
               onSubmit={(e) => { e.preventDefault(); updateFilters(searchInput); }} 
-              className="relative flex items-center gap-2 w-full"
+              className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full"
             >
               <div className="relative flex-1 group">
                 {/* L'icône Loupe */}
@@ -236,7 +236,7 @@ export default function AdminInventory() {
               {/* Bouton VALIDER (Filtrer) */}
               <button
                 type="submit"
-                className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg shadow-slate-200 active:scale-95"
+                className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg shadow-slate-200 active:scale-95 flex items-center justify-center"
               >
                 Filtrer
               </button>

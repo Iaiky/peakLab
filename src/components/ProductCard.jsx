@@ -1,33 +1,58 @@
 // src/components/ProductCard.jsx
 import { useCart } from "../context/CartContext";
 
-export default function ProductCard({ id, name, price, category, stock, weight }) {
+export default function ProductCard({ id, name, price, group, category, stock, weight, image }) {
   const { addToCart } = useCart();
 
   // On prépare l'objet produit pour le panier
-  const product = { id, name, price, category, weight };
+  const product = { id, name, price, group,category, weight, stock, image };
 
   return (
     <div className="group bg-white p-4 rounded-3xl border border-transparent hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer">
       <div className="aspect-square w-full overflow-hidden rounded-2xl bg-slate-100 mb-4 flex items-center justify-center relative">
-        <span className="text-slate-400">Photo</span>
-        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm">
-          {weight} kg
-        </div>
+        <img 
+          src={image || "/placeholder-produit.png"} 
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          onError={(e) => {
+            e.target.src = "https://placehold.co/600x600?text=Image+indisponible"; // Image de secours
+          }}
+        />
+        {/* On n'affiche le div que si weight existe et est supérieur à 0 */}
+        {weight > 0 && (
+          <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm">
+            {weight}g
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-[10px] text-secondary uppercase font-bold tracking-wider">{category}</p>
-            <h3 className="text-slate-900 font-semibold group-hover:text-primary transition">{name}</h3>
+        <div className="flex justify-between items-start gap-4"> {/* gap-4 force un espace minimum */}
+          <div className="flex-1 min-w-0"> {/* min-w-0 est crucial pour que le truncate fonctionne dans un flex */}
+            <p className="text-[10px] text-secondary uppercase font-bold tracking-wider truncate">
+              {category}
+            </p>
+            <h3 className="text-slate-900 font-semibold group-hover:text-primary transition line-clamp-2 leading-snug">
+              {name}
+            </h3>
           </div>
-          <p className="text-lg font-bold text-slate-900">{price.toLocaleString()}Ar</p>
+          
+          <div className="flex-shrink-0 text-right"> {/* flex-shrink-0 empêche le prix de s'écraser */}
+            <p className="text-lg font-black text-slate-900 leading-none">
+              {price.toLocaleString()}Ar
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-          <span className={`text-[11px] font-medium ${stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-            ● {stock > 0 ? `${stock} en stock` : 'Rupture'}
+          <span className={`text-[11px] font-black tracking-wider ${
+            stock > 5 
+              ? 'text-emerald-500' 
+              : stock > 0 
+                ? 'text-orange-500' 
+                : 'text-red-500'
+          }`}>
+            ● {stock} en stock
           </span>
 
           {/* BOUTON AJOUTER AU PANIER */}

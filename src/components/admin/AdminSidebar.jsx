@@ -32,8 +32,8 @@ export default function AdminSidebar() {
     { name: 'Produits', path: '/admin/products', icon: '📦' },
     { name: 'Groupes', path: '/admin/groups', icon: '🛍️' },
     { name: 'Catégories', path: '/admin/categories', icon: '📁' },
-    // { name: 'Clients', path: '/admin/customers', icon: '👥' },
-    // { name: 'Commandes', path: '/admin/orders', icon: '🛒' },
+    { name: 'Clients', path: '/admin/customers', icon: '👥' },
+    { name: 'Commandes', path: '/admin/orders', icon: '🛒' },
     // { name: 'Ventes', path: '/admin/sales', icon: '📜' },
   ];
 

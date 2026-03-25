@@ -1,29 +1,102 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, getDocs, doc, deleteDoc, updateDoc, increment, query, where } from 'firebase/firestore'
+import { db, storage } from '../firebase/config'
 import SidebarFilters from "../components/SidebarFilters";
 import ProductCard from "../components/ProductCard";
 import ProductModal from "../components/ProductModal";
-import products from "../assets/products"
+import { useAdminProduct } from '../hooks/useAdminProduct';
+import { useGroups } from '../hooks/useGroup';
+import { useCategories } from '../hooks/useCategorie';
+import PaginationHistory from "../components/history/PaginationsHistory";
+import GroupTabs from "../components/GroupTabs";
 
 
 export default function Shop() {
-    const [selectedProduct, setSelectedProduct] = useState(null);
+
+    const { groups } = useGroups();
+    const { categories: allCategoriesDocs } = useCategories();
+
+    // On utilise le même hook que l'admin (10 produits par page)
+    const {
+        products, 
+        loading, 
+        page, 
+        hasNext, 
+        setPage,
+        searchInput, 
+        setSearchInput, 
+        updateFilters, 
+        activeCategory, 
+        activeSearch,
+        activeGroup
+    } = useAdminProduct(9);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
+    // 2. ÉTATS LOCAUX D'INTERFACE
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [currentGroupId, setCurrentGroupId] = useState(activeGroup || "");
+    const [categories, setCategories] = useState([]);
+    const [tempCategory, setTempCategory] = useState(activeCategory || "Toutes les catégories");
+
+    // --- LOGIQUE DE SYNCHRONISATION ---
+
+    // Mettre à jour le groupe quand les groupes sont chargés
+      useEffect(() => {
+        if (groups.length > 0 && !currentGroupId) {
+          handleGroupChange(groups[0].id);
+        }
+      }, [groups]);
+    
+      const handleGroupChange = (groupId) => {
+        setCurrentGroupId(groupId);
+        // On réinitialise la catégorie quand on change de groupe pour éviter les mélanges
+        updateFilters(activeSearch, "Toutes les catégories", groupId); 
+      };
+
+      // Filtrer les catégories pour le select selon le groupe actif
+        const filteredCategoriesForSelect = allCategoriesDocs
+            .filter(cat => cat.IdGroupe === currentGroupId)
+
+        const getCategoryName = (idCategorie) => {
+            if (!idCategorie) return "Général";
+            // On cherche l'objet catégorie qui a cet ID
+            const cat = allCategoriesDocs.find(c => c.id === idCategorie);
+            return cat ? cat.Nom : "Général";
+        };
+
+        const getGroupName = (idGroup) => {
+            if (!idGroup) return "Général";
+            // On cherche l'objet group qui a cet ID
+            const group = groups.find(c => c.id === idGroup);
+            return group ? group.Nom : "Général";
+        };
+
+        // EFFECT 1 : Charger la liste des catégories depuis Firebase (AU DÉMARRAGE)
+        useEffect(() => {
+            const fetchCategories = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, "categories"));
+                // On extrait le champ "Nom" de chaque document
+                const cats = querySnapshot.docs.map(doc => doc.data().Nom);
+                setCategories(cats);
+            } catch (error) {
+                console.error("Erreur chargement catégories:", error);
+            }
+            };
+            fetchCategories();
+        }, []); // [] signifie : s'exécute une seule fois au chargement de la page
+
+        // EFFECT 2 : Synchroniser les inputs locaux avec l'URL (BACK/FORWARD NAV)
+        useEffect(() => {
+            setSearchInput(activeSearch || "");
+            setTempCategory(activeCategory || "Toutes les catégories");
+        }, [activeSearch, activeCategory]);
 
     const handleAddToCart = (product, qty = 1) => {
         console.log(`Ajout de ${qty} ${product.name} au panier`);
         // Ta logique d'ajout au panier ici
     };
-
-     // 1. État pour la pagination
-    const [currentPage, setCurrentPage] = useState(1);
-    const ordersPerPage = 6; // Nombre de commandes par page
-
-    // 2. Logique de calcul de la pagination
-    const indexOfLastOrder = currentPage * ordersPerPage;
-    const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-    const currentOrders = products.slice(indexOfFirstOrder, indexOfLastOrder);
-    const totalPages = Math.ceil(products.length / ordersPerPage);
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -75,29 +148,36 @@ export default function Shop() {
 
                             {/* Contenu scrollable (important pour les petits écrans) */}
                             <div className="h-[calc(100vh-120px)] lg:h-auto overflow-y-auto pr-2 custom-scrollbar">
-                                <SidebarFilters />
-                                
-                                {/* Bouton pour fermer et appliquer sur mobile */}
-                                <button 
-                                    onClick={() => setIsFilterOpen(false)}
-                                    className="w-full mt-8 lg:hidden bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl active:scale-95 transition-transform"
-                                >
-                                    Afficher les résultats
-                                </button>
+                                <SidebarFilters 
+                                    groups={groups}
+                                    categories={filteredCategoriesForSelect}
+                                    activeGroup={activeGroup}
+                                    activeCategory={activeCategory}
+                                    activeSearch={activeSearch}
+                                    onFilterChange={(s, c, g) => updateFilters(s, c, g)}
+                                />                               
                             </div>
                         </div>
                     </div>
                         
                     <div className="flex-1">
-                        <div className="flex justify-between items-center mb-8">
-                            <h1 className="text-2xl font-black text-slate-900">
-                                Nos produits <span className="text-secondary font-normal text-lg">({products.length})</span>
+
+                        <div className="mb-10 space-y-6"> 
+                            <div>
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
+                                Nos produits 
                             </h1>
-                            {/* Sélecteur de tri */}
-                            <select className="bg-transparent border-none text-sm font-bold text-secondary focus:ring-0 cursor-pointer">
-                                <option>Plus récents</option>
-                                <option>Prix croissant</option>
-                            </select>
+                            <div className="h-1 w-12 bg-primary mt-2 rounded-full" /> {/* Petite barre d'accentuation */}
+                            </div>
+
+                            {/* GroupTabs avec une marge interne si nécessaire */}
+                            <div className="pt-2">
+                            <GroupTabs 
+                                groups={groups} 
+                                currentGroupId={currentGroupId} 
+                                onGroupChange={handleGroupChange} 
+                            />
+                            </div>
                         </div>
 
                         {/* Grille */}
@@ -113,45 +193,31 @@ export default function Shop() {
                                         setIsModalOpen(true); 
                                     }}
                                 >
-                                    <ProductCard id={p.id} {...p} />
+                                    <ProductCard 
+                                        id={p.id }
+                                        name={p.Nom}
+                                        price={p.Prix}
+                                        group={getGroupName(p.IdGroupe)}
+                                        category= {getCategoryName(p.IdCategorie)}
+                                        stock= {p.Stock}
+                                        weight= {p.Poids} 
+                                        image={p.image}                                
+                                    />
                                 </div>
                             ))}
                         </div>
 
                         {/* BARRE DE PAGINATION */}
-                        {totalPages > 1 && (
-                        <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-center items-center gap-2">
-                            <button 
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                            className="p-2 text-slate-400 hover:text-primary disabled:opacity-30 transition"
-                            >
-                            ←
-                            </button>
-                            
-                            {Array.from({ length: totalPages }, (_, i) => (
-                            <button
-                                key={i + 1}
-                                onClick={() => setCurrentPage(i + 1)}
-                                className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
-                                currentPage === i + 1 
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-110' 
-                                : 'bg-white text-slate-400 border border-slate-200 hover:border-primary/30'
-                                }`}
-                            >
-                                {i + 1}
-                            </button>
-                            ))}
-
-                            <button 
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                            className="p-2 text-slate-400 hover:text-primary disabled:opacity-30 transition"
-                            >
-                            →
-                            </button>
-                        </div>
-                        )}
+                        {/* PAGINATION SIMPLIFIÉE */}
+                        <PaginationHistory 
+                            page={page}
+                            hasNext={hasNext}
+                            loading={loading}
+                            // On affiche la pagination seulement s'il y a plus d'une page possible
+                            show={!loading && (page > 1 || hasNext)} 
+                            onPrev={() => setPage(page - 1)}
+                            onNext={() => setPage(page + 1)}
+                        />
                     </div>  
                 </div>
             </main>

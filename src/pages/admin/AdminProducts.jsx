@@ -305,7 +305,7 @@ export default function AdminProducts() {
                       <span className="text-[9px] font-black px-2 py-0.5 bg-slate-100 rounded-md text-slate-500 uppercase mb-1 inline-block">
                         {getCategoryName(product.IdCategorie)}
                       </span>
-                      <p className="font-black text-slate-900 text-base leading-tight line-clamp-2">
+                      <p className="font-black text-slate-900 text-base leading-tight line-clamp-4">
                         {product.Nom}
                       </p>
                       {Number(product.Poids) > 0 && (
@@ -341,8 +341,14 @@ export default function AdminProducts() {
 
                 {/* Petit indicateur de stock en badge flottant ou en bas */}
                 <div className="px-5 pb-4 flex justify-end">
-                  <span className={`text-[10px] font-black px-3 py-1 rounded-full ${Number(product.Stock) > 10 ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {product.Stock || 0} en stock
+                  <span className={`inline-block px-3 py-1 rounded-lg text-[11px] font-black ${
+                    Number(product.Stock) > 5 
+                      ? 'bg-green-100 text-green-600' 
+                      : Number(product.Stock) === 0 
+                        ? 'bg-red-100 text-red-600' 
+                        : 'bg-orange-100 text-orange-600'
+                  }`}>
+                    {product.Stock || 0} pcs
                   </span>
                 </div>
               </div>
@@ -391,8 +397,15 @@ export default function AdminProducts() {
                       <td className="px-6 py-5 font-black text-slate-900 text-base">{product.Prix.toLocaleString()}Ar</td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${product.Stock > 10 ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-                            <span className="font-bold text-sm text-slate-700">{product.Stock} unités</span>
+                            <span className={`inline-block px-3 py-1 rounded-lg text-[11px] font-black ${
+                              Number(product.Stock) > 5 
+                                ? 'bg-green-100 text-green-600' 
+                                : Number(product.Stock) === 0 
+                                  ? 'bg-red-100 text-red-600' 
+                                  : 'bg-orange-100 text-orange-600'
+                            }`}>
+                              {product.Stock || 0} pcs
+                            </span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right" onClick={(e) => e.stopPropagation()}>
