@@ -1,11 +1,15 @@
 // src/components/ProductCard.jsx
 import { useCart } from "../context/CartContext";
 
-export default function ProductCard({ id, name, price, group, category, stock, weight, image }) {
-  const { addToCart } = useCart();
+export default function ProductCard({ id, name, price, group, category, stock, stockDisponible, weight, image }) {
+  const { addToCart, cartItems } = useCart();
 
-  // On prépare l'objet produit pour le panier
-  const product = { id, name, price, group,category, weight, stock, image };
+  // Quantité déjà dans le panier pour ce produit
+  const inCart = cartItems.find(i => i.id === id)?.qty || 0;
+  // Stock restant réellement ajoutables
+  const remaining = stockDisponible - inCart;
+
+  const product = { id, name, price, group, category, weight, stock, stockDisponible, image };
 
   return (
     <div className="group bg-white p-4 rounded-3xl border border-transparent hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer">
@@ -46,24 +50,24 @@ export default function ProductCard({ id, name, price, group, category, stock, w
 
         <div className="flex items-center justify-between pt-2 border-t border-slate-50">
           <span className={`text-[11px] font-black tracking-wider ${
-            stock > 5 
+            remaining > 5 
               ? 'text-emerald-500' 
-              : stock > 0 
+              : remaining > 0 
                 ? 'text-orange-500' 
                 : 'text-red-500'
           }`}>
-            ● {stock} en stock
+            ● {remaining} en stock
           </span>
 
           {/* BOUTON AJOUTER AU PANIER */}
           <button 
-            disabled={stock <= 0}
+            disabled={remaining <= 0}
             onClick={(e) => {
-              e.stopPropagation(); // Empêche d'ouvrir une éventuelle modale en cliquant sur le bouton
+              e.stopPropagation();
               addToCart(product);
             }}
             className={`p-1.5 rounded-full transition-all active:scale-90 ${
-              stock > 0 
+              remaining > 0
               ? 'bg-slate-50 text-primary hover:bg-primary hover:text-white shadow-sm' 
               : 'bg-slate-50 text-slate-300 cursor-not-allowed'
             }`}

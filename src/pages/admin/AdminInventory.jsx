@@ -138,8 +138,12 @@ export default function AdminInventory() {
         });
 
         // 5. MISE À JOUR DU PRODUIT
+        const reserved = currentStock - (Number(productData.stockDisponible) || 0);
+        const newStockDisponible = Math.max(0, updatedStockValue - reserved);
+
         transaction.update(productRef, { 
           Stock: updatedStockValue,
+          stockDisponible: newStockDisponible,
           DerniereMiseAJour: serverTimestamp() 
         });
       });
@@ -147,9 +151,14 @@ export default function AdminInventory() {
       // --- SI ON ARRIVE ICI, LA TRANSACTION EST RÉUSSIE ---
 
       // 6. Mise à jour de l'UI locale (State React)
+      const reserved = selectedProduct.Stock - (selectedProduct.stockDisponible || 0);
+      const newStockDisponible = Math.max(0, updatedStockValue - reserved);
+
       setData(prevProducts => 
         prevProducts.map(p => 
-          p.id === selectedProduct.id ? { ...p, Stock: updatedStockValue } : p
+          p.id === selectedProduct.id 
+            ? { ...p, Stock: updatedStockValue, stockDisponible: newStockDisponible } 
+            : p
         )
       );
 

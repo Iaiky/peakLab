@@ -276,11 +276,17 @@ export default function Profile() {
                       <td className="p-6">
                         <div className="flex flex-col">
                           {/* Si payé, on affiche le totalFinal en vert, sinon le total normal */}
-                          <p className={`font-black text-lg leading-none ${order.statut === 'paye' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                          <p className={`font-black text-lg leading-none 
+                          ${order.statut === 'paye' 
+                              ? 'text-emerald-600' 
+                              : order.statut === 'annule'
+                                ? 'text-red-400 line-through'
+                                : 'text-slate-900'
+                          }`}>
                             {(order.statut === 'paye' && order.totalFinal ? order.totalFinal : order.total).toLocaleString()}Ar
                           </p>
                           <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mt-1">
-                            {order.statut === 'paye' ? 'Montant Encaissé' : 'Total TTC'}
+                            {order.statut === 'paye' ? 'Montant Encaissé' : order.statut === 'annule' ? 'Annulée' : 'Total TTC'}
                           </p>
                           {/* Petit badge indiquant la remise si elle existe */}
                           {order.statut === 'paye' && order.remise > 0 && (
@@ -307,10 +313,12 @@ export default function Profile() {
                             
                             ${order.statut === 'paye' 
                               ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                              : 'bg-amber-50 text-amber-600 border-amber-100'
+                              : order.statut === 'annule'
+                                ? 'bg-red-50 text-red-500 border-red-100'
+                                : 'bg-amber-50 text-amber-600 border-amber-100'
                             }
                           `}>      
-                            {order.statut === 'paye' ? 'Payé' : 'En attente'}
+                            {order.statut === 'paye' ? 'Payé' : order.statut === 'annule' ? 'Annulée' : 'En attente'}
                           </span>
                         </div>
                       </td>
@@ -338,12 +346,15 @@ export default function Profile() {
                     </div>
                     
                     {/* Badge de statut harmonisé avec le bureau */}
-                    <span className={`flex items-center px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm ${
-                      order.statut === 'paye' 
+                    <span className={`flex items-center px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm 
+                    ${order.statut === 'paye' 
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                      : 'bg-amber-50 text-amber-600 border-amber-100'
-                    }`}>
-                      {order.statut === 'paye' ? 'Payé' : 'En attente'}
+                      : order.statut === 'annule'
+                        ? 'bg-red-50 text-red-500 border-red-100'
+                        : 'bg-amber-50 text-amber-600 border-amber-100'
+                    }
+                    `}>
+                      {order.statut === 'paye' ? 'Payé' : order.statut === 'annule' ? 'Annulée' : 'En attente'}
                     </span>
                   </div>
 
@@ -388,8 +399,13 @@ export default function Profile() {
                       )}
                     </div>
                     
-                    <p className={`font-black text-xl leading-none tracking-tighter ${
-                      order.statut === 'paye' ? 'text-emerald-600' : 'text-slate-900'
+                    <p className={`font-black text-xl leading-none tracking-tighter 
+                    ${
+                      order.statut === 'paye' 
+                        ? 'text-emerald-600' 
+                        : order.statut === 'annule'
+                          ? 'text-red-400 line-through'
+                          : 'text-slate-900'
                     }`}>
                       {(order.statut === 'paye' && order.totalFinal ? order.totalFinal : order.total).toLocaleString()}
                       <span className="text-sm ml-0.5">Ar</span>

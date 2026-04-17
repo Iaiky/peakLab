@@ -22,6 +22,7 @@ export default function AdminOrders() {
     handleSearch,
     handleReset,
     markAsPaid,
+    cancelOrder,
     loadData
   } = useAdminOrders(5);
 
@@ -70,7 +71,7 @@ export default function AdminOrders() {
   const stats = [
     { label: 'En attente', value: 'en_attente' },
     { label: 'Payées', value: 'paye' },
-    // { label: 'Livrées', value: 'livre' }
+    { label: 'Annulées', value: 'annule' }
   ];
 
   const hasFilters = searchInput || startDate || endDate; 
@@ -220,6 +221,7 @@ export default function AdminOrders() {
                     order={order} 
                     onEdit={() => setOrderToEdit(order)}
                     onUpdateStatus={order.statut === 'en_attente' ? markAsPaid : null}
+                    onCancel={order.statut === 'en_attente' ? cancelOrder : null}
                   />
                 ))}
               </div>

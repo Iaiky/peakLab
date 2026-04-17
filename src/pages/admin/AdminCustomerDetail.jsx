@@ -236,12 +236,17 @@ export default function AdminCustomerDetail() {
                       {/* TOTAL AVEC CONDITION DE PRIX FINAL */}
                       <td className="p-6">
                         <div className="flex flex-col">
-                          <p className={`font-black text-lg leading-none ${order.statut === 'paye' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                            {/* Condition : si payé, affiche totalFinal, sinon total */}
+                          <p className={`font-black text-lg leading-none ${
+                            order.statut === 'paye' 
+                              ? 'text-emerald-600' 
+                              : order.statut === 'annule' 
+                                ? 'text-red-400 line-through' 
+                                : 'text-slate-900'
+                          }`}>
                             {(order.statut === 'paye' && order.totalFinal ? order.totalFinal : order.total)?.toLocaleString()}Ar
                           </p>
                           <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mt-1">
-                            {order.statut === 'paye' ? 'Montant Encaissé' : 'Total TTC'}
+                            {order.statut === 'paye' ? 'Montant Encaissé' : order.statut === 'annule' ? 'Annulée' : 'Total TTC'}
                           </p>
                           {/* Affichage de la remise si elle existe */}
                           {order.statut === 'paye' && order.remise > 0 && (
@@ -257,10 +262,12 @@ export default function AdminCustomerDetail() {
                         <div className="flex justify-end">
                           <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm border whitespace-nowrap ${
                             order.statut === 'paye' 
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                            : 'bg-amber-50 text-amber-600 border-amber-100'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                              : order.statut === 'annule'
+                                ? 'bg-red-50 text-red-500 border-red-100'
+                                : 'bg-amber-50 text-amber-600 border-amber-100'
                           }`}>
-                            {order.statut === 'paye' ? 'Payé' : 'En attente'}
+                            {order.statut === 'paye' ? 'Payé' : order.statut === 'annule' ? 'Annulée' : 'En attente'}
                           </span>
                         </div>
                       </td>
@@ -288,9 +295,11 @@ export default function AdminCustomerDetail() {
                     <span className={`flex items-center px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm ${
                       order.statut === 'paye' 
                         ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                        : 'bg-amber-50 text-amber-600 border-amber-100'
+                        : order.statut === 'annule'
+                          ? 'bg-red-50 text-red-500 border-red-100'
+                          : 'bg-amber-50 text-amber-600 border-amber-100'
                     }`}>
-                      {order.statut === 'paye' ? 'Payé' : 'En attente'}
+                      {order.statut === 'paye' ? 'Payé' : order.statut === 'annule' ? 'Annulée' : 'En attente'}
                     </span>
                   </div>
 
@@ -324,7 +333,7 @@ export default function AdminCustomerDetail() {
                   <div className="flex justify-between items-end border-t border-slate-100 pt-3">
                     <div className="flex flex-col">
                       <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">
-                        {order.statut === 'paye' ? 'Montant encaissé' : 'Total TTC'}
+                        {order.statut === 'paye' ? 'Montant encaissé' : order.statut === 'annule' ? 'Annulée' : 'Total TTC'}
                       </p>
                       {order.statut === 'paye' && order.remise > 0 && (
                         <span className="text-[9px] text-emerald-500 font-black uppercase mt-0.5">
@@ -334,7 +343,11 @@ export default function AdminCustomerDetail() {
                     </div>
                     
                     <p className={`font-black text-xl leading-none tracking-tighter ${
-                      order.statut === 'paye' ? 'text-emerald-600' : 'text-slate-900'
+                      order.statut === 'paye' 
+                        ? 'text-emerald-600' 
+                        : order.statut === 'annule' 
+                          ? 'text-red-400 line-through' 
+                          : 'text-slate-900'
                     }`}>
                       {(order.statut === 'paye' && order.totalFinal ? order.totalFinal : order.total)?.toLocaleString()}
                       <span className="text-sm ml-0.5 font-bold">Ar</span>

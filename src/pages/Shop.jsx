@@ -200,6 +200,7 @@ export default function Shop() {
                                         group={getGroupName(p.IdGroupe)}
                                         category= {getCategoryName(p.IdCategorie)}
                                         stock= {p.Stock}
+                                        stockDisponible= {p.stockDisponible}
                                         weight= {p.Poids} 
                                         image={p.image}                                
                                     />

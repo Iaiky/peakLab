@@ -104,6 +104,7 @@ export default function AdminAddProduct() {
         Prix: prixInitial,
         Poids: Number(formData.Poids) || 0,
         Stock: stockInitial,
+        stockDisponible: stockInitial,
         Description: formData.Description,
         image: url,
         createdAt: serverTimestamp()

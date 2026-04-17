@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import Swal from 'sweetalert2';
 
-export default function AdminOrderCard({ order, onUpdateStatus, onEdit }) {
+export default function AdminOrderCard({ order, onUpdateStatus, onCancel, onEdit }) {
   const [discountPercent, setDiscountPercent] = useState(order.remise || 0);
   
   const items = order.items || order.panier || [];
@@ -13,13 +14,13 @@ export default function AdminOrderCard({ order, onUpdateStatus, onEdit }) {
   const statusStyles = {
     "en_attente": "bg-amber-50 text-amber-600 border-amber-100",
     "paye": "bg-emerald-50 text-emerald-600 border-emerald-100",
-    // "livre": "bg-blue-50 text-blue-600 border-blue-100"
+    "annule": "bg-red-50 text-red-600 border-red-100"
   };
 
   const statusLabels = {
     "en_attente": "En attente",
     "paye": "Payé",
-    // "livre": "Livré"
+    "annule": "Annulé"
   };
 
   // Formatage de la date de paiement si elle existe
@@ -167,6 +168,34 @@ export default function AdminOrderCard({ order, onUpdateStatus, onEdit }) {
                 💳 Valider Paiement
               </button>
             )}
+
+            {/* ← BOUTON ANNULER */}
+            {onCancel && order.statut === 'en_attente' && (
+              <button 
+                onClick={() => {
+                  Swal.fire({
+                    title: 'Annuler la commande ?',
+                    text: 'Le stock disponible sera restitué.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Oui, annuler',
+                    cancelButtonText: 'Non',
+                    confirmButtonColor: '#EF4444',
+                    cancelButtonColor: '#0F172A',
+                    customClass: { popup: 'rounded-[2rem]' }
+                  }).then((result) => {
+                    if (result.isConfirmed) onCancel(order);
+                  });
+                }}
+                className="flex-1 md:flex-none p-3 bg-white border border-red-200 text-red-400 rounded-xl hover:bg-red-50 hover:border-red-400 transition-all shadow-sm active:scale-95"
+                title="Annuler la commande"
+              >
+                <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+
             <button 
               onClick={() => onEdit(order)}
               className="flex-1 md:flex-none p-3 bg-slate-900 md:bg-white border border-slate-900 md:border-slate-200 text-white md:text-slate-400 rounded-xl hover:text-primary hover:border-primary transition-all shadow-sm active:scale-95"

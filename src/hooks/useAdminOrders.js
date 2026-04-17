@@ -176,14 +176,21 @@ export function useAdminOrders(pageSize = 10) {
           const productRef = doc(db, "produits", item.id);
           const productSnap = await transaction.get(productRef);
           
-          if (!productSnap.exists()) throw `Produit ${item.nom} introuvable.`;
+          if (!productSnap.exists()) throw `Produit "${item.nom}" introuvable.`;
           
           const currentData = productSnap.data();
+          const currentStock = currentData.Stock || 0;
+
+          // ✅ Vérification que le stock réel est suffisant
+          if (item.qty > currentStock) {
+            throw `Stock insuffisant pour "${item.nom}". Stock réel : ${currentStock}`;
+          }
+
           productUpdates.push({
             ref: productRef,
             data: currentData,
             qty: item.qty,
-            newStock: (currentData.Stock || 0) - item.qty
+            newStock: currentStock - item.qty
           });
         }
 
@@ -200,7 +207,12 @@ export function useAdminOrders(pageSize = 10) {
         // B. Mise à jour des stocks et création des mouvements
         for (const p of productUpdates) {
           // Mise à jour du stock produit
-          transaction.update(p.ref, { Stock: p.newStock });
+          transaction.update(p.ref, { 
+            Stock: p.newStock,
+            // ✅ Resynchronise stockDisponible = nouveau Stock réel
+            // (au cas où il y aurait eu un écart entre réservations et stock)
+            stockDisponible: p.newStock
+          });
 
           // Création du mouvement de stock (Sortie)
           // On génère une nouvelle réf de document pour MouvementsStock
@@ -236,6 +248,55 @@ export function useAdminOrders(pageSize = 10) {
     }
   };
 
+  // --- ACTION : ANNULER/REFUSER & RESTITUER LE stockDisponible ---
+  const cancelOrder = async (order) => {
+    try {
+      await runTransaction(db, async (transaction) => {
+        const orderRef = doc(db, "Commandes", order.id);
+        const items = order.items || order.panier || [];
+
+        // --- 1. TOUTES LES LECTURES ---
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists()) throw "La commande n'existe pas.";
+        if (orderSnap.data().statut !== "en_attente") throw "Seules les commandes en attente peuvent être annulées.";
+
+        const productRefs = items.map(item => doc(db, "produits", item.id));
+        const productSnaps = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+        // --- 2. TOUTES LES ÉCRITURES ---
+
+        // A. Mise à jour statut commande
+        transaction.update(orderRef, {
+          statut: "annule",
+          cancelledAt: serverTimestamp()
+        });
+
+        // B. Restitution du stockDisponible pour chaque produit
+        for (let i = 0; i < items.length; i++) {
+          if (!productSnaps[i].exists()) continue;
+          const currentStock = productSnaps[i].data().stockDisponible || 0;
+          transaction.update(productRefs[i], {
+            stockDisponible: currentStock + items[i].qty
+          });
+        }
+      });
+
+      Swal.fire({
+        title: 'Commande annulée',
+        text: 'Le stock disponible a été restitué.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      loadData();
+
+    } catch (error) {
+      console.error("Erreur annulation:", error);
+      Swal.fire({ title: 'Erreur', text: error.toString(), icon: 'error' });
+    }
+  };
+
   useEffect(() => {
     loadData();
     // Synchro des inputs si l'URL change
@@ -258,6 +319,7 @@ export function useAdminOrders(pageSize = 10) {
     handleSearch,
     handleReset,
     markAsPaid,
+    cancelOrder,
     loadData
   };
 }

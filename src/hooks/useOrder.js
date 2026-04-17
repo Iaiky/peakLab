@@ -36,16 +36,21 @@ export function useOrder() {
 
     const querySnapshot = await getDocs(recentOrdersQuery);
     if (!querySnapshot.empty) {
-        const lastOrder = querySnapshot.docs[0].data();
-        const lastOrderTime = lastOrder.date?.toMillis() || 0;
-        const now = Date.now();
+      const lastOrder = querySnapshot.docs[0].data();
+      const lastOrderTime = lastOrder.date?.toMillis() || 0;
+      const now = Date.now();
 
-        // Si la dernière commande date de moins de 30 secondes
-        if (now - lastOrderTime < 30000) { 
-            alert("Une commande est déjà en cours de traitement. Patientez quelques secondes.");
-            setLoading(false);
-            return;
-        }
+      // Si la dernière commande date de moins de 30 secondes
+      if (now - lastOrderTime < 30000) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Commande en cours',
+          text: 'Une commande est déjà en cours de traitement. Patientez quelques secondes.',
+          confirmButtonColor: '#1B456F'
+        });
+        setLoading(false);
+        return;
+      }
     }
 
     // 1. Génération d'un ID unique basé sur l'UID et le timestamp
@@ -60,15 +65,44 @@ export function useOrder() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        // Optionnel : Tu pourrais vérifier ici si le stock est suffisant 
-        // avant de valider la transaction.
+        
+        // ✅ 1. Lire et vérifier le stockDisponible de chaque produit
+        const produitRefs = cartItems.map(item => doc(db, "produits", item.id));
+        const produitSnaps = await Promise.all(produitRefs.map(ref => transaction.get(ref)));
 
+        for (let i = 0; i < cartItems.length; i++) {
+          const item = cartItems[i];
+          const snap = produitSnaps[i];
+
+          if (!snap.exists()) {
+            throw new Error(`Le produit "${item.name}" n'existe plus.`);
+          }
+
+          const stockDisponible = snap.data().stockDisponible ?? 0;
+
+          if (item.qty > stockDisponible) {
+            throw new Error(`Stock insuffisant pour "${item.name}". Disponible : ${stockDisponible}`);
+          }
+        }
+
+        // ✅ 2. Déduire le stockDisponible pour chaque produit
+        for (let i = 0; i < cartItems.length; i++) {
+          const item = cartItems[i];
+          const snap = produitSnaps[i];
+          const stockDisponible = snap.data().stockDisponible;
+
+          transaction.update(produitRefs[i], {
+            stockDisponible: stockDisponible - item.qty
+          });
+        }
+
+        // ✅ 3. Créer la commande
         const orderData = {
-          idCommande: orderId, // On stocke l'ID aussi à l'intérieur
+          idCommande: orderId,
           idClient: user.uid,
           date: serverTimestamp(),
           client: {
-            nom: user.displayName || user.Nom || '', 
+            nom: user.displayName || '',
             email: user.email
           },
           items: cartItems.map(item => ({
@@ -85,23 +119,21 @@ export function useOrder() {
           statut: "en_attente"
         };
 
-        // 2. Écriture de la commande dans la transaction
         transaction.set(orderRef, orderData);
       });
 
-      // --- 2. ALERTE DE SUCCÈS ---
       await Swal.fire({
         title: 'Commande validée !',
         text: `Votre commande ${orderId} a été enregistrée avec succès.`,
         icon: 'success',
         confirmButtonText: 'Voir mes commandes',
-        confirmButtonColor: '#1B456F', 
+        confirmButtonColor: '#1B456F',
         background: '#ffffff',
         customClass: {
-        popup: 'rounded-[2.5rem] border-none shadow-2xl', 
-        title: 'font-black text-slate-900 pt-6',
-        htmlContainer: 'font-medium text-slate-500',
-        confirmButton: 'rounded-2xl font-black uppercase tracking-[0.1em] text-xs px-8 py-4 mb-4'
+          popup: 'rounded-[2.5rem] border-none shadow-2xl',
+          title: 'font-black text-slate-900 pt-6',
+          htmlContainer: 'font-medium text-slate-500',
+          confirmButton: 'rounded-2xl font-black uppercase tracking-[0.1em] text-xs px-8 py-4 mb-4'
         },
       });
       

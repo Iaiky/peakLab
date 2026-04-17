@@ -5,6 +5,7 @@ export default function OrderDetailsModal({ isOpen, onClose, order }) {
 
   // Déterminer si on affiche le prix avec remise
   const isPaye = order.statut === 'paye';
+  const isAnnule = order.statut === 'annule';
   const displayTotal = isPaye && order.totalFinal ? order.totalFinal : order.total;
 
   return (
@@ -27,10 +28,12 @@ export default function OrderDetailsModal({ isOpen, onClose, order }) {
                 {/* Badge Statut Dynamique */}
                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
                   isPaye 
-                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                  : 'bg-amber-50 text-amber-600 border-amber-100'
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                    : isAnnule
+                      ? 'bg-red-50 text-red-500 border-red-100'
+                      : 'bg-amber-50 text-amber-600 border-amber-100'
                 }`}>
-                  {isPaye ? 'Payé' : 'En attente'}
+                  {isPaye ? 'Payé' : isAnnule ? 'Annulée' : 'En attente'}
                 </span>
               </div>
               <p className="text-sm text-slate-400 font-medium">Référence : <span className="text-primary font-bold">#{order.id.slice(-8)}</span></p>
@@ -82,19 +85,21 @@ export default function OrderDetailsModal({ isOpen, onClose, order }) {
             </div>
             <div>
               <h4 className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-widest">Statut du paiement</h4>
-              <p className={`text-xs font-bold ${isPaye ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {isPaye ? 'Transaction terminée' : 'Paiement à la livraison'}
+              <p className={`text-xs font-bold ${
+                isPaye ? 'text-emerald-600' : isAnnule ? 'text-red-500' : 'text-amber-600'
+              }`}>
+                {isPaye ? 'Transaction terminée' : isAnnule ? 'Commande annulée' : 'Paiement à la livraison'}
               </p>
             </div>
           </div>
         </div>
 
         {/* Footer: Total avec calcul de remise */}
-        <div className={`p-8 transition-colors duration-500 bg-slate-900 text-white`}>
+        <div className={`p-8 transition-colors duration-500 ${isAnnule ? 'bg-red-500' : 'bg-slate-900'} text-white`}>
           <div className="flex justify-between items-center">
             <div>
               <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">
-                {isPaye ? 'Montant Encaissé' : 'Total de la commande'}
+                {isPaye ? 'Montant Encaissé' : isAnnule ? 'Commande Annulée' : 'Total de la commande'}
               </p>
               {isPaye && order.remise > 0 && (
                 <div className="flex items-center gap-2 mt-1">
@@ -108,7 +113,7 @@ export default function OrderDetailsModal({ isOpen, onClose, order }) {
               )}
             </div>
             <div className="text-right">
-              <p className="text-4xl font-black">
+              <p className={`text-4xl font-black ${isAnnule ? 'line-through opacity-60' : ''}`}>
                 {displayTotal.toLocaleString()} <span className="text-sm font-medium opacity-60">Ar</span>
               </p>
               <p className="text-[10px] text-white/40 italic">Toutes taxes incluses</p>

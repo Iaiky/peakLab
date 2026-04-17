@@ -10,8 +10,13 @@ export function CartProvider({ children }) {
     setCartItems(prev => {
       const isPresent = prev.find(i => i.id === product.id);
       if (isPresent) {
-        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + quantity } : i);
+        const newQty = isPresent.qty + quantity;
+        // Bloque si on dépasse le stockDisponible
+        if (newQty > product.stockDisponible) return prev;
+        return prev.map(i => i.id === product.id ? { ...i, qty: newQty } : i);
       }
+      // Bloque si stock épuisé
+      if (quantity > product.stockDisponible) return prev;
       return [...prev, { ...product, qty: quantity }];
     });
   };
@@ -22,9 +27,8 @@ export function CartProvider({ children }) {
       return prev.map(item => {
         if (item.id === productId) {
           const newQty = item.qty + delta;
-          // Si la nouvelle quantité est 0 ou moins, on pourrait soit bloquer à 1, 
-          // soit supprimer l'article. Ici on bloque à 1.
-          return { ...item, qty: Math.max(1, newQty) };
+          // Bloque en dessous de 1 et au-dessus du stockDisponible
+          return { ...item, qty: Math.min(Math.max(1, newQty), item.stockDisponible) };
         }
         return item;
       });

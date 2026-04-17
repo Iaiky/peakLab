@@ -7,10 +7,15 @@ export default function ProductModal({ product, isOpen, onClose }) {
   const { categories: allCategoriesDocs } = useCategories();
   const { groups: allGroupsDocs } = useGroups();
   const [quantity, setQuantity] = useState(1);
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
 
   // 1. On place le "Early Return" AVANT toute manipulation de l'objet product
   if (!isOpen || !product) return null;
+
+  // Quantité déjà dans le panier pour ce produit
+  const inCart = cartItems.find(i => i.id === product.id)?.qty || 0;
+  // Stock restant ajoutables
+  const remaining = (product.stockDisponible || 0) - inCart;
 
   const getCategoryName = (idCategorie) => {
     if (!idCategorie) return "Général";
@@ -32,8 +37,9 @@ export default function ProductModal({ product, isOpen, onClose }) {
       price: product.Prix, 
       category: getCategoryName(product.IdCategorie), 
       group: getGroupName(product.IdGroupe), 
-      weight: product.Poids || 0, // Correction : Poids ici
-      stock: product.Stock || 0,   // Correction : Stock ici
+      weight: product.Poids || 0, 
+      stock: product.Stock || 0,   
+      stockDisponible: product.stockDisponible || 0,
       image: product.image, 
     };
 
@@ -101,15 +107,15 @@ export default function ProductModal({ product, isOpen, onClose }) {
 
           <div className="mb-4 ml-1">
             <span className={`text-[10px] font-black uppercase tracking-wider ${
-              product.Stock > 5 ? 'text-emerald-500' : product.Stock > 0 ? 'text-orange-500' : 'text-red-500'
+              remaining > 5 ? 'text-emerald-500' : remaining > 0 ? 'text-orange-500' : 'text-red-500'
             }`}>
-              ● {product.Stock > 0 ? `${product.Stock} en stock` : 'Rupture'}
+              {/* ← utilise remaining au lieu de stockDisponible */}
+              ● {remaining > 0 ? `${remaining} en stock` : 'Rupture'}
             </span>
           </div>
 
           <div className="h-[1px] w-full bg-slate-100 mb-6" />
 
-          {/* Prix et Quantité plus compacts */}
           <div className="flex items-center justify-between mb-6">
             <span className="text-2xl md:text-3xl font-black text-slate-900">
               {(product.Prix || 0).toLocaleString()}Ar
@@ -122,20 +128,31 @@ export default function ProductModal({ product, isOpen, onClose }) {
               > - </button>
               <span className="font-black text-base w-4 text-center">{quantity}</span>
               <button 
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm font-bold text-slate-600 hover:text-primary transition-colors"
+                // ← bloqué si on atteint le remaining
+                onClick={() => setQuantity(Math.min(remaining, quantity + 1))}
+                disabled={quantity >= remaining}
+                className={`w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm font-bold transition-colors ${
+                  quantity >= remaining 
+                    ? 'text-slate-300 cursor-not-allowed' 
+                    : 'text-slate-600 hover:text-primary'
+                }`}
               > + </button>
             </div>
           </div>
 
           <button 
             onClick={handleFinalAdd}
-            className="w-full bg-primary text-white py-4 rounded-xl font-black text-xs uppercase tracking-[0.15em] hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+            disabled={remaining <= 0} // ← bloqué si rupture
+            className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${
+              remaining > 0
+                ? 'bg-primary text-white hover:bg-primary/90'
+                : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+            }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
-            Ajouter au panier
+            {remaining > 0 ? 'Ajouter au panier' : 'Rupture de stock'}
           </button>
           
         </div>
