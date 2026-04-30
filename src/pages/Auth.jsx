@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo_peak_lab.jpg';
 import { useAuth } from '../context/AuthContext';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -89,6 +90,20 @@ export default function Auth() {
       navigate("/");
     } catch (err) {
       setError("Connexion Google annulée.");
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      return setError("Entrez votre email d'abord.");
+    }
+    try {
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, formData.email);
+      setError(''); 
+      alert(`Un email de réinitialisation a été envoyé à ${formData.email}`);
+    } catch (err) {
+      setError("Email introuvable ou invalide.");
     }
   };
 
@@ -190,7 +205,14 @@ export default function Auth() {
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase px-1 flex justify-between">
                 Mot de passe
-                {isLogin && <span className="text-primary lowercase font-medium cursor-pointer">Oublié ?</span>}
+                {isLogin && (
+                  <span 
+                    onClick={handleForgotPassword}
+                    className="text-primary lowercase font-medium cursor-pointer hover:underline transition-all"
+                  >
+                    Oublié ?
+                  </span>
+                )}
               </label>
               <input 
                 required name="password" type="password"
@@ -227,18 +249,18 @@ export default function Auth() {
           </form>
 
           <div className="mt-8 text-center">
+            <span className="text-sm font-medium text-slate-400">
+              {isLogin ? "Nouveau ici ? " : "Déjà membre ? "}
+            </span>
             <button 
               type="button"
               onClick={() => { setIsLogin(!isLogin); setError(''); }}
-              className="text-sm font-medium text-slate-400 hover:text-primary transition-colors"
+              className="text-sm font-black text-primary underline underline-offset-2 hover:opacity-70 transition-opacity"
             >
-              {isLogin ? (
-                <>Nouveau ici ? <span className="text-primary font-black underline underline-offset-2">Créer un compte</span></>
-              ) : (
-                <>Déjà membre ? <span className="text-primary font-black underline underline-offset-2">Se connecter</span></>
-              )}
+              {isLogin ? "Créer un compte" : "Se connecter"}
             </button>
           </div>
+
         </div>
       </div>
     </div>
