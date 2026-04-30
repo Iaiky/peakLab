@@ -232,7 +232,11 @@ export default function Auth() {
               onClick={() => { setIsLogin(!isLogin); setError(''); }}
               className="text-sm font-medium text-slate-400 hover:text-primary transition-colors"
             >
-              {isLogin ? "Nouveau ici ? Créer un compte" : "Déjà membre ? Se connecter"}
+              {isLogin ? (
+                <>Nouveau ici ? <span className="text-primary font-black underline underline-offset-2">Créer un compte</span></>
+              ) : (
+                <>Déjà membre ? <span className="text-primary font-black underline underline-offset-2">Se connecter</span></>
+              )}
             </button>
           </div>
         </div>
